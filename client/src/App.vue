@@ -2,7 +2,6 @@
 <template>
   <div class="app">
 	<batch_record></batch_record>
-	<templateCreation></templateCreation	>
   </div>
 </template>
 
