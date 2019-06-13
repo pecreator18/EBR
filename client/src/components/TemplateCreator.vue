@@ -1,0 +1,488 @@
+﻿<template>
+	<div class="main_div">
+	<div class= "batch_record">
+		<div class = "operator_nav">
+			<table class = "nav_buttons">
+				<tr>
+					<td class = "nav_button_cell">
+						<button class = "nav_button" id = "Previous" v-on:click = "view_previous">Previous Step</button>
+					</td>
+					<td class = "nav_button_cell">
+						<button class = "nav_button" id = "Next" v-on:click = " return_to_current">Return to Current Step</button>
+					</td>
+					<td class = "nav_button_cell">
+						<button class = "nav_button" id = "Next" v-on:click = " view_next">Next Step</button>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<br>
+		<br>
+		<div class="container" id = 'container'>
+		
+		<div id = "step header" class = "step_header">
+			<table class = "header_table">
+			<tr>
+				<td id = "step number" class = "step_number">{{step.step_number}}</td>
+				<td class = "step_image"><img id = "step symbol" :src = "step.step_symbol"></td>
+				<td id = "step title"  class = "step_title"><input class = "step_title_input" type ="text" v-model = "step.step_title"></td>
+			</tr>
+			</table>
+		</div>
+		
+		<div id = "instructions" class = "instructions">
+			<ol>
+				<li  v-for = "instruction in step.step_instructions"><p><textarea class = "instruction_input"  type = "text" v-model = "instruction.instruction"></textarea> <button v-on:click = "removeInstruction(instruction.instruction)">Remove</button></p></li>
+			</ol>
+			<button v-on:click = "addInstruction">Add Instruction</button>
+		</div>
+		
+		<h3>Step Data</h3>
+
+			<div class = "step_data" id = "step data">
+				<table class = 'data_table'>
+					<tr>
+						<th>Description</th>
+						<th>Value</th>
+					</tr>
+					
+					<tr v-for = "data_input in step.step_data">
+							<td class = 'data_description'><input class = "process_component_input" type="text" v-model = "data_input.process_component"> </td>
+							<td class = 'data_entry'><input class = 'data_input'  type = 'text' v-model = "data_input.data"></input></td>
+							<td><button v-on:click = "removeData(data_input.process_component)">Remove</button></td>
+					</tr>
+					
+				</table>
+				<button v-on:click = "addData">Add Data</button>
+			
+			</div>
+		
+		</div>
+	<button v-on:click = "addStep">Add Step</button>
+	{{batch_record.steps.length}}
+	</div>
+		<div class = "step_list">
+			<h1>Batch Record Steps</h1>
+			<ol>
+				<li v-for = "step in batch_record.steps">{{step.step_title}}</li>
+				
+			</ol>
+		</div>
+	</div>
+
+</template>
+
+<script>
+import StepService from '../StepServices';
+
+	export default {
+		name: 'test',
+		props: ['step.performed_by','step.verified_by'],	
+		components: {
+		
+		},
+		data(){
+			return {
+				error: '',
+				project_code: "",
+				lot_number: null,
+				preview_counter: 0,
+				batch_record_library:[],
+				step:"",
+				batch_record: {
+					part_number: "",
+					lot_number: "",
+					current_step: 0,
+					steps: []
+
+				},
+				steps: [],
+				step: {
+					step_status: 'pending',
+					step_number:1,
+					step_symbol: 0,
+					step_title: "Enter A Step Title",
+					step_instructions: [
+							{instruction: "Add Instructions Here"}
+						],
+					step_data: [
+						{
+							custom_data_type: "",
+							process_component: "Process Component",
+							data: "This is data"
+						}
+
+					   ]
+				}
+			}
+		
+		},
+	async created(){
+		try{
+			/*var record =  await StepService.getTemplate('4-MF-4599').then( (res) => { return res} );
+			console.log(record);
+		
+			this.batch_record = record[0];
+			this.step = this.batch_record.steps[this.batch_record.current_step.$numberInt];*/
+		}
+		catch(err){
+			this.error = err.message;
+		}
+  
+ 		},
+		
+		methods: {
+			addStep: function(){
+					this.batch_record.steps[this.batch_record.current_step] = this.step,
+					this.batch_record.steps.push(
+					{
+						step_status: 'pending',
+						step_number: this.step.step_number + 1,
+						step_symbol: 0,
+						step_title: "Enter A Step Title",
+						step_visual_aid: 0,
+						step_instructions: [
+							{instruction: "Add Instructions Here"}
+						],
+						step_data: [
+						{
+							custom_data_type: "",
+							process_component: "Process Component",
+							data: "This is data"
+						}
+
+					   ]
+
+					}	
+
+					),
+					this.batch_record.current_step += 1,
+					this.step = this.batch_record.steps[this.batch_record.current_step]
+			},
+
+			addInstruction: function(){
+				this.step.step_instructions.push(
+					{instruction: ""}
+				);
+				},
+			removeInstruction: function(value){
+				   for( var i = 0; i < this.step.step_instructions.length; i++){ 
+  						 if ( this.step.step_instructions[i].instruction === value) {
+    							 this.step.step_instructions.splice(i, 1); 
+   									}
+					}
+			
+			},
+			addData: function(){
+
+					this.step.step_data.push(
+
+						{
+							custom_data_type: "",
+							process_component: "",
+							data: ""
+						}						
+
+
+					)
+				},
+			removeData: function(value){
+				for( var i = 0; i < this.step.step_data.length; i++){ 
+  						 if ( this.step.step_data[i].process_component === value) {
+    							 this.step.step_data.splice(i, 1); 
+   									}
+					}
+				
+			},
+			
+			//Batch Record Selection Methods
+			batch_record_selection: function(part_number){
+				
+				const batch_record_selected = this.batch_record_library.filter((batch_record) => { return batch_record.part_number === part_number});
+				this.batch_record = batch_record_selected[0];
+				this.step = this.batch_record.steps[this.batch_record.current_step];
+
+			},
+
+		
+
+			//Batch Record Methods
+			view_previous: function(){
+
+					if(this.batch_record.current_step > 0){
+
+						this.batch_record.current_step -=  1;
+						this.preview_counter -= 1;
+						this.step = this.batch_record.steps[this.batch_record.current_step];
+						
+					}
+			},
+			view_next: function(){
+					
+					if(this.batch_record.current_step < this.batch_record.steps.length -1){
+
+						this.batch_record.current_step +=  1;
+						this.preview_counter += 1;
+						this.step = this.batch_record.steps[this.batch_record.current_step];
+					}
+			},
+			return_to_current: function(){
+
+						this.batch_record.current_step -= this.preview_counter;
+						this.preview_counter = 0;
+						this.step = this.batch_record.steps[this.batch_record.current_step];
+						
+
+			},
+			
+		
+		},
+		
+		computed: {
+			
+		
+		}
+		
+	}
+
+</script>
+<style scoped>
+
+.main_div{
+
+	background-color:lightgrey;
+	height: 100%;
+	width: 100%;
+
+}
+
+.container {
+
+	width: 95%;
+	margin:auto;
+	padding:1%;
+	border:2px solid black;
+	background-color: White;
+
+
+}
+
+th {
+ 
+	background-color: lightgrey;
+	
+
+}
+table, td,th {
+
+	border: 1px solid black;
+	border-collapse: collapse;
+
+}
+
+
+/* Operator Navigation */
+
+.operator_nav{
+	
+	width: 95%;
+	height:5em;
+	margin:auto;
+	border:2px solid black;
+	background-color: White;
+
+}
+
+.nav_buttons{
+	
+	width:100%;
+	height:100%;
+	border:2px solid black;
+
+
+}
+.nav_button{
+
+	width:100%;
+	height:100%;
+	font-weight: bold;
+	font-size:36px;
+	
+
+}
+.nav_button_cell{
+
+	width:33%;
+	height:100%;
+	
+
+}
+
+
+/* Header Styling */
+.step_header{
+	padding: 0px;
+	margin: auto;
+	width: 100%;
+
+}
+
+.header_table{
+	width: 100%;
+	
+}
+
+.step_number{
+
+	width:10%;
+	background-color: White;
+	text-align: center;
+	font-weight: bold;
+	font-size: 20px;
+	
+
+}
+.step_image{
+
+	width:10%;
+	text-align: center;
+
+}
+.step_title{
+
+	width:80%;
+	background-color: lightgrey;
+	text-align: center;
+	font-weight: bold;
+	font-size: 20px;
+
+}
+.step_title_input{
+	width: 100%;
+	height: 100%;
+	background-color: lightgrey;
+	font-weight: bold;
+	font-size: 20px;
+
+}
+
+/* Instructions */
+instructions{
+	text-align: left;
+	width:100%;
+}
+ol{
+	font-weight: bold;
+
+}
+li p {
+	text-align: left;
+	line-height: 1.5em;
+	text-indent: 0.5em;
+	font-weight: normal;
+	width:100%;
+	
+}
+li textarea{
+	width: 90%;
+	height:auto;
+	vertical-align: middle;
+}
+
+/*
+ol {
+  margin: 0 0 0;
+  padding: 1.5em;
+  counter-reset: item;
+}
+
+ol > li {
+  margin: 0;
+  padding: 0 0 0 ;
+  text-indent: -2em;
+  list-style-type: none;
+  counter-increment: item;
+}
+
+ol > li:before {
+  display: inline-block;
+  width: 1em;
+  padding-right: 0.5em;
+  font-weight: bold;
+  text-align: left;
+  content: counter(item) ".";
+}*/
+/*Data Table*/
+
+.step_data{
+	width: 100%;
+
+}
+
+.data_table{
+	width: 80%;
+
+
+}
+
+
+.data_description{
+
+	background-color: lightgrey;
+	font-weight: bold;
+	padding:0.5%;
+
+
+}
+
+.data_entry{
+	margin: 0px;
+	padding: 5px;
+	background-color:black;
+
+}
+.data_input{
+	
+	width: 100%;
+	height: 100%;
+
+}
+.process_component_input{
+	width: 100%;
+	height: 100%;
+	background-color: lightgrey;
+	font-weight: bold;
+	font-size: 20px;
+	text-align: center;
+	
+}
+
+/*Performed By and Verified By */
+
+.sign_off{
+	width: 100%;
+	border:2px solid black;
+
+}
+
+.sign_off td{
+	width: 20%;
+	border:2px solid black;
+
+}
+
+.signatures{
+	margin:0px;
+	width: 100%;
+	height: 20%;
+}
+
+.performer_verifier{
+
+	background-color: lightgrey;
+	font-weight: bold;
+	text-align: center;
+	
+}
+
+</style>
