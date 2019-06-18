@@ -9,9 +9,9 @@
 	<br>
 	<div v-if = "home">
 		<h1>Batch Record System Home</h1>
-		<p> This application will be developed to be used as a electronic batch record system 
+		<p> This application will be developed to be used as a electronic batch record system
 			for use in manufacturing operations that must comply with FDA regulations.</p>
-		
+
 	</div>
 	<br>
 	<batch_record v-if = "execute"></batch_record>
@@ -28,7 +28,7 @@ export default {
   components: {
 	batch_record,
 	templateCreation
-	
+
   },
   data(){
 			return {
@@ -36,30 +36,30 @@ export default {
 				execute: false,
 				home:true
 			}
-		
+
 		},
 	methods:{
-		
+
 			Create: function(){
 				this.create = true;
 				this.execute = false;
 				this.home = false;
-			
+
 			},
 			Execute: function(){
 				this.create = false;
 				this.execute = true;
 				this.home = false;
-			
+
 			},
 			Home: function(){
 				this.create = false;
 				this.execute = false;
 				this.home = true;
-			
+
 			}
-	
-	
+
+
 	}
 }
 
@@ -77,5 +77,6 @@ export default {
   /*margin-top: 60px;*/
   padding:1px;
   width: 100%;
+  background-color: lightgrey;
 }
 </style>

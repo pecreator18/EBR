@@ -1,5 +1,19 @@
 <template>
 	<div class="test">
+		<div class="batch_record_select" v-if = "br_selected === false">
+			<ol>
+						<li v-for = "batch_record in batch_record_list">
+							Part Number: {{batch_record.part_number}}
+							Lot Number: {{batch_record.lot_number}}
+							Unit Operation: {{batch_record.unit_operation}}
+							Description: {{batch_record.description}}
+							<button class = "" id = "" v-on:click = "loadBatchRecord(batch_record.lot_number)">Start Batch Record</button>
+						</li>
+			</ol>
+		</div>
+		<div class="batch_record" v-if = "br_selected">
+
+
 		<div class = "operator_nav">
 			<table class = "nav_buttons">
 				<tr>
@@ -27,37 +41,37 @@
 			</tr>
 			</table>
 		</div>
-		
+
 		<div id = "instructions">
 			<ol>
-				<li v-for = "instruction in step.step_instructions"><p>{{instruction}}</p></li>
+				<li v-for = "instruction in step.step_instructions"><p>{{instruction.instruction}}</p></li>
 			</ol>
 		</div>
-		
+
 		<h3>Step Data</h3>
 
 			<div class = "step_data" id = "step data">
-			
+
 				<table class = 'data_table'>
 					<tr>
 						<th>Description</th>
 						<th>Value</th>
 					</tr>
-					
+
 					<tr v-if = "step.step_status === 'in-progress' " v-for = "data_input in step.step_data">
 							<td class = 'data_description'><label> {{data_input.process_component}}</label></td>
 							<td class = 'data_entry'><input class = 'data_input'  type = 'text'  v-model = "data_input.data"></input></td>
 					</tr>
-					
+
 					<tr v-else >
 							<td class = 'data_description'><label> {{data_input.process_component}}</label></td>
 							<td class = 'data_entry'><input class = 'data_input'  type = 'text'  v-model = "data_input.data" disabled ></input></td>
 					</tr>
-					
+
 				</table>
-			
+
 			</div>
-			
+
 			<h3>Performed By and Verified By</h3>
 		<div class= "sign_off" id = "sign off">
 
@@ -94,9 +108,10 @@
 		</table>
 	</div>
 		</div>
+		</div>
 	</div>
-	
-	
+
+
 
 </template>
 
@@ -106,17 +121,19 @@ import StepService from '../StepServices';
 
 	export default {
 		name: 'test',
-		props: ['steps[current_step].performed_by','steps[current_step].verified_by'],	
+		props: ['steps[current_step].performed_by','steps[current_step].verified_by'],
 		components: {
 			esig
 		},
 		data(){
 			return {
+				br_selected: false,
+				batch_record_list: [],
 				wait:require('@/assets/Step Symbols/wait.jpg'),
 				step_symbols: [
 					require('@/assets/Step Symbols/image001.png'),
 					require('@/assets/Step Symbols/wait.jpg')
-				
+
 				],
 				step_symbol: '',
 				current_step: 0,
@@ -124,27 +141,36 @@ import StepService from '../StepServices';
 				batch_record_length: 0,
 				batch_record: {},
 				step: {}
-						
-				
+
+
 			}
-		
+
 		},
 	async created(){
 		try{
-		
-			this.batch_record = await StepService.getBatchRecord('3-PRO-1880');//Get the batch record from the database.
-			this.step = this.batch_record.steps[this.batch_record.current_step];
-			this.step_symbol = this.step_symbols[this.step.step_symbol];
-			this.batch_record_length = this.batch_record.steps.length;
+			this.batch_record_list = await StepService.getBatchRecordList().then( (res) => { return res} );
+
+
 		}
 	catch(err){
 			this.error = err.message;
 	}
-  
+
   },
-		
+
 		methods: {
-			
+
+			loadBatchRecord: async function(lot_number){
+
+				this.batch_record = await StepService.getBatchRecord(lot_number);//Get the batch record from the database.
+				this.step = this.batch_record.steps[this.batch_record.current_step];
+				this.step_symbol = this.step_symbols[this.step.step_symbol];
+				this.batch_record_length = this.batch_record.steps.length;
+				this.br_selected = true;
+
+
+			},
+
 			view_previous: function(){
 					if(this.batch_record.current_step > 0){
 						this.batch_record.current_step = this.batch_record.current_step - 1;
@@ -189,29 +215,29 @@ import StepService from '../StepServices';
 											step: this.step
 										};
 					await StepService.updateBR(batch_record_step);
-					this.batch_record = await StepService.getBatchRecord('3-PRO-1880');
+					this.batch_record = await StepService.getBatchRecord(this.batch_record.lot_number);
 					this.step = this.batch_record.steps[this.batch_record.current_step];
 					this.step_symbol = this.step_symbols[this.step.step_symbol];
-				
+
 				}else{
 					this.steps[this.current_step].verified_by = null;
 				}
 			},
-			
+
 			getURL: function(url){
 				const a = `this.step_symbol.${url}`;
-				
+
 				this.step_symbol = a;
-			
+
 			}
-		
+
 		},
-		
+
 		computed: {
-			
-		
+
+
 		}
-		
+
 	}
 
 </script>
@@ -231,9 +257,9 @@ import StepService from '../StepServices';
 }
 
 th {
- 
+
 	background-color: lightgrey;
-	
+
 
 }
 table, td,th {
@@ -247,9 +273,9 @@ table, td,th {
 /* Operator Navigation */
 
 .operator_nav{
-	
+
 	width: 95%;
-	height:5em;
+	height:5%;
 	margin:auto;
 	border:2px solid black;
 	background-color: White;
@@ -257,7 +283,7 @@ table, td,th {
 }
 
 .nav_buttons{
-	
+
 	width:100%;
 	height:100%;
 	border:2px solid black;
@@ -270,14 +296,15 @@ table, td,th {
 	height:100%;
 	font-weight: bold;
 	font-size:36px;
-	
+	font-size:2.0vw;
+
 
 }
 .nav_button_cell{
 
 	width:33%;
 	height:100%;
-	
+
 
 }
 
@@ -292,7 +319,7 @@ table, td,th {
 
 .header_table{
 	width: 100%;
-	
+
 }
 
 .step_number{
@@ -301,13 +328,13 @@ table, td,th {
 	text-align: center;
 	font-weight: bold;
 	font-size: 20px;
-	
+
 
 }
 .step_image{
 	width:10%;
 	text-align: center;
-	
+
 
 
 }
@@ -387,7 +414,7 @@ ol > li:before {
 
 }
 .data_input{
-	
+
 	width: 100%;
 	height: 100%;
 
@@ -418,7 +445,7 @@ ol > li:before {
 	background-color: lightgrey;
 	font-weight: bold;
 	text-align: center;
-	
+
 }
 
 </style>

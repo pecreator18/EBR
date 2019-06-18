@@ -1,6 +1,16 @@
 ﻿<template>
 	<div class="main_div">
-	<div class= "batch_record">
+	<div class="template_select" v-if = "template_selected === false">
+		<ol>
+					<li v-for = "template in batch_record_template_list">
+						Template Number: {{template.template_number}}
+						Unit Operation: {{template.unit_operation}}
+						Template Description: {{template.description}}
+						<button class = "" id = "" v-on:click = "loadTemplate(template.template_number)">Start with this template</button>
+					</li>
+		</ol>
+	</div>
+	<div class= "batch_record" v-if = "template_selected">
 		<div class = "operator_nav">
 			<table class = "nav_buttons">
 				<tr>
@@ -19,7 +29,7 @@
 		<br>
 		<br>
 		<div class="container" id = 'container'>
-		
+
 		<div id = "step header" class = "step_header">
 			<table class = "header_table">
 			<tr>
@@ -29,14 +39,14 @@
 			</tr>
 			</table>
 		</div>
-		
+
 		<div id = "instructions" class = "instructions">
 			<ol>
 				<li  v-for = "instruction in step.step_instructions"><p><textarea class = "instruction_input"  type = "text" v-model = "instruction.instruction"></textarea> <button v-on:click = "removeInstruction(instruction.instruction)">Remove</button></p></li>
 			</ol>
 			<button v-on:click = "addInstruction">Add Instruction</button>
 		</div>
-		
+
 		<h3>Step Data</h3>
 
 			<div class = "step_data" id = "step data">
@@ -45,28 +55,28 @@
 						<th>Description</th>
 						<th>Value</th>
 					</tr>
-					
+
 					<tr v-for = "data_input in step.step_data">
 							<td class = 'data_description'><input class = "process_component_input" type="text" v-model = "data_input.process_component"> </td>
 							<td class = 'data_entry'><input class = 'data_input'  type = 'text' v-model = "data_input.data"></input></td>
 							<td><button v-on:click = "removeData(data_input.process_component)">Remove</button></td>
 					</tr>
-					
+
 				</table>
 				<button v-on:click = "addData">Add Data</button>
-			
+
 			</div>
-		
+
 		</div>
 	<button v-on:click = "addStep">Add Step</button>
 	{{batch_record.steps.length}}
 	</div>
-		<div class = "step_list">
+		<div class = "step_list"  v-if = "template_selected">
 			<h1>Batch Record Steps</h1>
 			<ol>
 				<li v-for = "step in batch_record.steps">{{step.step_title}}</li>
-				
 			</ol>
+			<button type="button" name="button" v-on:click = "createLot">Create Batch Record</button>
 		</div>
 	</div>
 
@@ -77,18 +87,17 @@ import StepService from '../StepServices';
 
 	export default {
 		name: 'test',
-		props: ['step.performed_by','step.verified_by'],	
+		props: ['step.performed_by','step.verified_by'],
 		components: {
-		
+
 		},
 		data(){
 			return {
 				error: '',
 				project_code: "",
-				lot_number: null,
+				template_selected: false,
 				preview_counter: 0,
-				batch_record_library:[],
-				step:"",
+				batch_record_template_list:[],
 				batch_record: {
 					part_number: "",
 					lot_number: "",
@@ -96,7 +105,6 @@ import StepService from '../StepServices';
 					steps: []
 
 				},
-				steps: [],
 				step: {
 					step_status: 'pending',
 					step_number:1,
@@ -115,22 +123,20 @@ import StepService from '../StepServices';
 					   ]
 				}
 			}
-		
+
 		},
 	async created(){
 		try{
-			/*var record =  await StepService.getTemplate('4-MF-4599').then( (res) => { return res} );
-			console.log(record);
-		
-			this.batch_record = record[0];
-			this.step = this.batch_record.steps[this.batch_record.current_step.$numberInt];*/
+			this.batch_record_template_list = await StepService.getBatchRecordTemplates().then( (res) => { return res} );
+
+
 		}
 		catch(err){
 			this.error = err.message;
 		}
-  
+
  		},
-		
+
 		methods: {
 			addStep: function(){
 					this.batch_record.steps[this.batch_record.current_step] = this.step,
@@ -153,7 +159,7 @@ import StepService from '../StepServices';
 
 					   ]
 
-					}	
+					}
 
 					),
 					this.batch_record.current_step += 1,
@@ -166,12 +172,12 @@ import StepService from '../StepServices';
 				);
 				},
 			removeInstruction: function(value){
-				   for( var i = 0; i < this.step.step_instructions.length; i++){ 
+				   for( var i = 0; i < this.step.step_instructions.length; i++){
   						 if ( this.step.step_instructions[i].instruction === value) {
-    							 this.step.step_instructions.splice(i, 1); 
+    							 this.step.step_instructions.splice(i, 1);
    									}
 					}
-			
+
 			},
 			addData: function(){
 
@@ -181,30 +187,38 @@ import StepService from '../StepServices';
 							custom_data_type: "",
 							process_component: "",
 							data: ""
-						}						
+						}
 
 
 					)
 				},
 			removeData: function(value){
-				for( var i = 0; i < this.step.step_data.length; i++){ 
+				for( var i = 0; i < this.step.step_data.length; i++){
   						 if ( this.step.step_data[i].process_component === value) {
-    							 this.step.step_data.splice(i, 1); 
+    							 this.step.step_data.splice(i, 1);
    									}
 					}
-				
+
 			},
-			
-			//Batch Record Selection Methods
-			batch_record_selection: function(part_number){
-				
-				const batch_record_selected = this.batch_record_library.filter((batch_record) => { return batch_record.part_number === part_number});
-				this.batch_record = batch_record_selected[0];
+			loadTemplate: async function(template_number){
+				var record =  await StepService.getTemplate(template_number).then( (res) => { return res} );
+				delete record._id; //Delete the id object from the template
+				this.batch_record = record;
 				this.step = this.batch_record.steps[this.batch_record.current_step];
+				this.template_selected = true;
+
+			},
+			createLot: function(){
+					this.batch_record.part_number = String(Math.floor(Math.random() * 1000));
+					this.batch_record.lot_number = String(Math.floor(Math.random() * 1000));
+					this.batch_record.current_step = 0;
+					StepService.createLot(this.batch_record);
+					this.template_selected = false;
+
 
 			},
 
-		
+
 
 			//Batch Record Methods
 			view_previous: function(){
@@ -214,11 +228,11 @@ import StepService from '../StepServices';
 						this.batch_record.current_step -=  1;
 						this.preview_counter -= 1;
 						this.step = this.batch_record.steps[this.batch_record.current_step];
-						
+
 					}
 			},
 			view_next: function(){
-					
+
 					if(this.batch_record.current_step < this.batch_record.steps.length -1){
 
 						this.batch_record.current_step +=  1;
@@ -231,18 +245,18 @@ import StepService from '../StepServices';
 						this.batch_record.current_step -= this.preview_counter;
 						this.preview_counter = 0;
 						this.step = this.batch_record.steps[this.batch_record.current_step];
-						
+
 
 			},
-			
-		
+
+
 		},
-		
+
 		computed: {
-			
-		
+
+
 		}
-		
+
 	}
 
 </script>
@@ -268,9 +282,9 @@ import StepService from '../StepServices';
 }
 
 th {
- 
+
 	background-color: lightgrey;
-	
+
 
 }
 table, td,th {
@@ -284,9 +298,9 @@ table, td,th {
 /* Operator Navigation */
 
 .operator_nav{
-	
+
 	width: 95%;
-	height:5em;
+	height:5%;
 	margin:auto;
 	border:2px solid black;
 	background-color: White;
@@ -294,7 +308,7 @@ table, td,th {
 }
 
 .nav_buttons{
-	
+
 	width:100%;
 	height:100%;
 	border:2px solid black;
@@ -307,14 +321,15 @@ table, td,th {
 	height:100%;
 	font-weight: bold;
 	font-size:36px;
-	
+	font-size:2.0vw;
+
 
 }
 .nav_button_cell{
 
 	width:33%;
 	height:100%;
-	
+
 
 }
 
@@ -329,7 +344,7 @@ table, td,th {
 
 .header_table{
 	width: 100%;
-	
+
 }
 
 .step_number{
@@ -339,7 +354,7 @@ table, td,th {
 	text-align: center;
 	font-weight: bold;
 	font-size: 20px;
-	
+
 
 }
 .step_image{
@@ -381,7 +396,7 @@ li p {
 	text-indent: 0.5em;
 	font-weight: normal;
 	width:100%;
-	
+
 }
 li textarea{
 	width: 90%;
@@ -442,7 +457,7 @@ ol > li:before {
 
 }
 .data_input{
-	
+
 	width: 100%;
 	height: 100%;
 
@@ -454,7 +469,7 @@ ol > li:before {
 	font-weight: bold;
 	font-size: 20px;
 	text-align: center;
-	
+
 }
 
 /*Performed By and Verified By */
@@ -482,7 +497,7 @@ ol > li:before {
 	background-color: lightgrey;
 	font-weight: bold;
 	text-align: center;
-	
+
 }
 
 </style>
