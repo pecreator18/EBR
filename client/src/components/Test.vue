@@ -1,18 +1,31 @@
 <template>
 	<div class="test">
 		<div class="batch_record_select" v-if = "br_selected === false">
-			<ol>
+			<h3 v-if = "batch_record_list.length === 0">NONE</h3>
+			<h3 v-else>Pending Batch Record Lots</h3>
+						<ol>
 						<li v-for = "batch_record in batch_record_list">
-							Part Number: {{batch_record.part_number}}
-							Lot Number: {{batch_record.lot_number}}
-							Unit Operation: {{batch_record.unit_operation}}
-							Description: {{batch_record.description}}
+							<p>
+							<strong>Part Number: </strong>{{batch_record.part_number}}
+							<strong>Lot Number: </strong>{{batch_record.lot_number}}
+							<strong>Unit Operation: </strong>{{batch_record.unit_operation}}
+							<strong>Description: </strong>{{batch_record.description}}
 							<button class = "" id = "" v-on:click = "loadBatchRecord(batch_record.lot_number)">Start Batch Record</button>
+						</p>
 						</li>
+
 			</ol>
 		</div>
 		<div class="batch_record" v-if = "br_selected">
-
+			<div class="container" id = 'container'>
+				<table>
+					<tr>
+						<td class = "step_title">Batch Record Description</td>
+						<td>  <strong>{{batch_record.description}}</strong></td>
+					</tr>
+				</table>
+			</div>
+			<br>
 
 		<div class = "operator_nav">
 			<table class = "nav_buttons">
@@ -110,9 +123,6 @@
 		</div>
 		</div>
 	</div>
-
-
-
 </template>
 
 <script>
@@ -149,8 +159,6 @@ import StepService from '../StepServices';
 	async created(){
 		try{
 			this.batch_record_list = await StepService.getBatchRecordList().then( (res) => { return res} );
-
-
 		}
 	catch(err){
 			this.error = err.message;
@@ -206,18 +214,23 @@ import StepService from '../StepServices';
 			},
 			verified: async function(signature){
 				if(signature.length > 2){
+					if(this.batch_record.current_step >= this.batch_record.steps.length - 1){
+						this.batch_record.batch_record_status = 'complete'
+					}
 					this.step.verified_by =  await signature;
 					this.step.step_status = await 'complete';
 					var batch_record_step = {
 											lot_number: this.batch_record.lot_number,
 											current_step: this.batch_record.current_step,
 											batch_record_length: this.batch_record_length,
+											batch_record_status: this.batch_record.batch_record_status,
 											step: this.step
 										};
 					await StepService.updateBR(batch_record_step);
 					this.batch_record = await StepService.getBatchRecord(this.batch_record.lot_number);
 					this.step = this.batch_record.steps[this.batch_record.current_step];
 					this.step_symbol = this.step_symbols[this.step.step_symbol];
+
 
 				}else{
 					this.steps[this.current_step].verified_by = null;

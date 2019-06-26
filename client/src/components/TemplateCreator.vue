@@ -1,16 +1,33 @@
 ﻿<template>
 	<div class="main_div">
 	<div class="template_select" v-if = "template_selected === false">
+		<h3> Batch Record Templates </h3>
+		<br>
 		<ol>
 					<li v-for = "template in batch_record_template_list">
-						Template Number: {{template.template_number}}
-						Unit Operation: {{template.unit_operation}}
-						Template Description: {{template.description}}
+						<p>
+						<strong>Template Number: </strong>{{template.template_number}}
+						<strong>Unit Operation: </strong>{{template.unit_operation}}
+						<strong>Template Description: </strong>{{template.description}}
 						<button class = "" id = "" v-on:click = "loadTemplate(template.template_number)">Start with this template</button>
+						</p>
 					</li>
+
 		</ol>
 	</div>
 	<div class= "batch_record" v-if = "template_selected">
+		<div class="container" id = 'container'>
+			<table>
+				<tr>
+					<td class = "step_title">Batch Record Description</td>
+					<td><input type="text" name="" value="" v-model = "batch_record.description"></td>
+				</tr>
+			</table>
+		</div>
+			<br>
+
+
+
 		<div class = "operator_nav">
 			<table class = "nav_buttons">
 				<tr>
@@ -28,8 +45,8 @@
 		</div>
 		<br>
 		<br>
-		<div class="container" id = 'container'>
 
+		<div class="container" id = 'container'>
 		<div id = "step header" class = "step_header">
 			<table class = "header_table">
 			<tr>
@@ -69,12 +86,12 @@
 
 		</div>
 	<button v-on:click = "addStep">Add Step</button>
-	{{batch_record.steps.length}}
 	</div>
 		<div class = "step_list"  v-if = "template_selected">
 			<h1>Batch Record Steps</h1>
 			<ol>
-				<li v-for = "step in batch_record.steps">{{step.step_title}}</li>
+
+				<li v-for = "step in batch_record.steps"><p>{{step.step_title}}</p></li>
 			</ol>
 			<button type="button" name="button" v-on:click = "createLot">Create Batch Record</button>
 		</div>
@@ -99,6 +116,7 @@ import StepService from '../StepServices';
 				preview_counter: 0,
 				batch_record_template_list:[],
 				batch_record: {
+
 					part_number: "",
 					lot_number: "",
 					current_step: 0,
@@ -106,6 +124,7 @@ import StepService from '../StepServices';
 
 				},
 				step: {
+
 					step_status: 'pending',
 					step_number:1,
 					step_symbol: 0,
@@ -120,7 +139,7 @@ import StepService from '../StepServices';
 							data: "This is data"
 						}
 
-					   ]
+					]
 				}
 			}
 

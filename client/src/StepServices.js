@@ -3,6 +3,22 @@ import axios from 'axios';
 const url = 'api/batch_records/';
 
 class StepService{
+
+	//Get all completed batch record
+	static getCompletedBatchRecordList(){
+		return new Promise(async (resolve, reject) =>{
+			try{
+				const res = await axios.get(`${url}Completed_BRs` );
+				const data = res.data;
+				resolve(
+					data
+					);
+			}catch(err){
+				reject(err);
+			}
+		})}
+
+
 	//Get all batch record templates
 	static getBatchRecordList(){
 		return new Promise(async (resolve, reject) =>{
@@ -100,6 +116,26 @@ class StepService{
 		});
 	}
 
+	//Sign in authentications
+	static authenticateUser(user){
+		return new Promise(async (resolve, reject) =>{
+			try{
+				const res = await axios.get(`${url}authenticateUser`,{
+						params: {
+							username: user.username,
+							password: user.password
+						}
+					});
+				const data = res.data;
+				resolve(
+					data
+					);
+			}catch(err){
+				reject(err);
+			}
+		})
+
+}
 
 
 	//Delete Post

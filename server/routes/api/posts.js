@@ -3,11 +3,38 @@ const mongodb = require('mongodb');
 
 const router = express.Router();
 
-//Get all batch record templates
+//Get all pending batch records
 router.get('/allBRs', async(req,res) => {
   const client = await loadBatchRecordCollection();
   const batch_record_DB = await client.db('Drug_Substance_Manufacturing').collection('batch_records');
-  const batch_records =  await batch_record_DB.find({}).toArray();
+  const batch_records =  await batch_record_DB.find({batch_record_status : 'pending'}).toArray();
+  client.close();
+
+  const batch_record_list = [];
+  for(var i = 0; i < batch_records.length; i++){
+    batch_record_list.push(
+        {
+            part_number : batch_records[i].part_number,
+            lot_number: batch_records[i].lot_number,
+            unit_operation: batch_records[i].unit_operation,
+            description: batch_records[i].description
+
+        }
+
+    )
+
+
+  };
+
+  res.send(batch_record_list);
+
+});
+
+//Get all completed Batch records
+router.get('/Completed_BRs', async(req,res) => {
+  const client = await loadBatchRecordCollection();
+  const batch_record_DB = await client.db('Drug_Substance_Manufacturing').collection('batch_records');
+  const batch_records =  await batch_record_DB.find({batch_record_status : 'complete'}).toArray();
   client.close();
 
   const batch_record_list = [];
@@ -44,7 +71,6 @@ router.get('/allBRs', async(req,res) => {
 
  //Update Batch Record
 router.post('/updateBR',async (req,res)=>{
-
 	var current_step =  req.body.batch_record_step.current_step;//Get the current step of the batch record.
 	const br_length =  req.body.batch_record_step.batch_record_length;
 	const lot_number = req.body.batch_record_step.lot_number;
@@ -58,6 +84,7 @@ router.post('/updateBR',async (req,res)=>{
 	}
 	else{
 		update["$set"]["steps." + current_step] = req.body.batch_record_step.step;
+    update["$set"]["batch_record_status"] = req.body.batch_record_step.batch_record_status;
 	};
 	await batch_record.updateOne({lot_number: lot_number},update); //Update Batch Record Step
 	await client.close();
@@ -112,6 +139,24 @@ router.post('/createLot', async(req,res) => {
 	 res.status(201).send();
 
  });
+
+ //Authenticate User
+ router.get('/authenticateUser', async(req,res) => {
+    const username = req.query.username;
+    const password = req.query.password;
+ 		const client = await loadBatchRecordCollection();
+ 		const usersCollection = await client.db('Drug_Substance_Manufacturing').collection('Users');
+ 		const authentication =  await usersCollection.find({'username': username, 'password': password}).toArray();
+    await client.close();
+
+ 		if(authentication.length == 0){
+      res.send("None");
+    }else{
+      res.send(authentication[0]);
+    }
+
+
+ } );
 
 
  //Delete Post
