@@ -61,22 +61,24 @@
 		</div>
 
 		<h3>Step Data</h3>
-
 			<div class = "step_data" id = "step data">
 
 				<table class = 'data_table'>
 					<tr>
 						<th>Description</th>
+						<th>Specification</th>
 						<th>Value</th>
 					</tr>
 
 					<tr v-if = "step.step_status === 'in-progress' " v-for = "data_input in step.step_data">
 							<td class = 'data_description'><label> {{data_input.process_component}}</label></td>
+							<td class = 'data_description'><label> {{data_input.specification}}&#177{{data_input.error_range}}{{data_input.units}}</label></td>
 							<td class = 'data_entry'><input class = 'data_input'  type = 'text'  v-model = "data_input.data"></input></td>
 					</tr>
 
 					<tr v-else >
 							<td class = 'data_description'><label> {{data_input.process_component}}</label></td>
+							<td class = 'data_description'><label> {{data_input.specification}}&#177{{data_input.error_range}}{{data_input.units}}</label></td>
 							<td class = 'data_entry'><input class = 'data_input'  type = 'text'  v-model = "data_input.data" disabled ></input></td>
 					</tr>
 
@@ -86,37 +88,30 @@
 
 			<h3>Performed By and Verified By</h3>
 		<div class= "sign_off" id = "sign off">
-
-		<table class = "signatures">
-		<tr>
-			<td class = "performer_verifier">
-				<label><strong>Performed By</strong></label>
-			</td>
-			<td  v-if = "step.step_status === 'in-progress'" class = "data_entry">
-				<esig  class = "data_input" v-on:Singature_IMG = "performed($event)"></esig>
-			</td>
-			<td  v-else-if = "step.step_status === 'pending'  " class = "data_entry">
-				<img class = "data_input" :src = "wait">
-			<td  v-else class = "data_entry">
-				<img class = "data_input" :src = "step.performed_by">
-			</td>
-
-			<td class = "performer_verifier">
-
-				<label><strong>Verified By</strong></label>
-			</td>
-
-			<td v-if = "step.step_status === 'performed'" class = "data_entry">
-				<esig  class = "data_input" v-on:Singature_IMG = "verified($event)"></esig>
-			</td>
-			<td  v-else-if = "step.step_status === 'in-progress' || step.step_status === 'pending'  " class = "data_entry">
-				<img class = "data_input" :src = "wait">
-			</td>
-			<td  v-else class = "data_entry">
-				<img class = "data_input" :src = "step.verified_by">
-			</td>
-
-		</tr>
+			<ul>
+	      <li v-for = "err in error_list">{{err}}</li>
+	    </ul>
+			<table class = "signatures">
+				<tr>
+					<td>
+						<button v-if = "step.step_status === 'in-progress'" type="button" name="button" v-on:click ="check_data_inputs" >Performed By</button>
+					</td>
+					<td>
+					<signoff v-if = "error == false && step.step_status === 'in-progress'" v-on:user_authenticated = "performed($event)"></signoff>
+					<span v-else-if = "step.step_status === 'performed' || step.step_status === 'complete'"><strong>Performed By: </strong>{{step.performed_by}},<br><strong>Performed On: </strong>{{step.performed_on}}</span>
+					<span v-else><img :src="step_symbols[1]" alt="No Image"></span>
+					</td>
+					<td><button type="button" name="button" disabled>Verified By</button></td>
+					<td>
+						<verifier :performer = "step.performed_by" v-if = "step.step_status === 'performed'" v-on:user_authenticated = "verified($event)"></verifier>
+						<span v-else-if = "step.step_status === 'complete'">
+							<strong>Verifed By: </strong>{{step.verified_by}},
+							<br>
+							<strong>Verified On: </strong>{{step.verified_on}}
+						</span>
+						<span v-else><img :src="step_symbols[1]" alt="No Image"></span>
+					</td>
+				</tr>
 		</table>
 	</div>
 		</div>
@@ -125,14 +120,13 @@
 </template>
 
 <script>
-import esig from './Signature'
 import StepService from '../StepServices';
 
 	export default {
 		name: 'test',
 		props: ['steps[current_step].performed_by','steps[current_step].verified_by'],
 		components: {
-			esig
+
 		},
 		data(){
 			return {

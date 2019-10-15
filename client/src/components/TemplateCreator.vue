@@ -15,17 +15,26 @@
 
 		</ol>
 	</div>
+
 	<div class= "batch_record" v-if = "template_selected">
-		<div class="container" id = 'container'>
-			<table>
+
+		<div class="br_header" v-if = "template_selected">
+			<table class = "br_header_table">
 				<tr>
-					<td class = "step_title">Batch Record Description</td>
-					<td><input type="text" name="" value="" v-model = "batch_record.description"></td>
+					<td class = "br_details">Batch Record Description</td>
+					<td class = "br_details"><input type="text" name="" value="" v-model = "batch_record.description"></td>
+				</tr>
+				<tr>
+					<td class = "br_details">Part Number</td>
+					<td class = "br_details">TBD</td>
+				</tr>
+				<tr>
+					<td class = "br_details">Lot Number</td>
+					<td class = "br_details">TBD</td>
 				</tr>
 			</table>
 		</div>
 			<br>
-
 
 
 		<div class = "operator_nav">
@@ -45,21 +54,24 @@
 		</div>
 		<br>
 		<br>
-
 		<div class="container" id = 'container'>
 		<div id = "step header" class = "step_header">
 			<table class = "header_table">
 			<tr>
 				<td id = "step number" class = "step_number">{{step.step_number}}</td>
-				<td class = "step_image"><img id = "step symbol" :src = "step.step_symbol"></td>
-				<td id = "step title"  class = "step_title"><input class = "step_title_input" type ="text" v-model = "step.step_title"></td>
+				<td class = "step_image"><!--<button v-on:click = "select_image">Change Image</button>-->
+								<selectstepsymbol v-if = "change_image" @update = "updateIcon($event)"></selectstepsymbol>
+								<img v-on:click = "select_image" v-if = "change_image == false"  :src="getImgUrl(step.step_symbol)" alt = "no image found">
+				</td>
+
+				<td id = "step title"  class = "step_title"><input class = "step_title_input" type ="text" v-model = "step.step_title" placeholder = "Enter Step Title"></td>
 			</tr>
 			</table>
 		</div>
 
 		<div id = "instructions" class = "instructions">
 			<ol>
-				<li  v-for = "instruction in step.step_instructions"><p><textarea class = "instruction_input"  type = "text" v-model = "instruction.instruction"></textarea> <button v-on:click = "removeInstruction(instruction.instruction)">Remove</button></p></li>
+				<li  v-for = "instruction in step.step_instructions"><p><textarea class = "instruction_input"  type = "text" v-model = "instruction.instruction" placeholder= "Enter Instruction"></textarea> <button v-on:click = "removeInstruction(instruction.instruction)">Remove</button></p></li>
 			</ol>
 			<button v-on:click = "addInstruction">Add Instruction</button>
 		</div>
@@ -69,17 +81,43 @@
 			<div class = "step_data" id = "step data">
 				<table class = 'data_table'>
 					<tr>
+						<th>Data Type</th>
 						<th>Description</th>
-						<th>Value</th>
+						<th>Specification</th>
 					</tr>
 
 					<tr v-for = "data_input in step.step_data">
-							<td class = 'data_description'><input class = "process_component_input" type="text" v-model = "data_input.process_component"> </td>
-							<td class = 'data_entry'><input class = 'data_input'  type = 'text' v-model = "data_input.data"></input></td>
+						 <td class = 'custom_data_type'>
+						 	<select class='custom_data_type_select' name="" v-model = "data_input.custom_data_type" >
+								<option value="" disabled selected>Select Data Type</option>
+								<option value="Raw Material">Raw Material</option>
+								<option value="Equipment">Equipment</option>
+								<option value="In-Process Data">In-Process Data</option>
+						 	</select>
+						 </td>
+							<td class = 'data_description'><input class = "process_component_input" type="text" v-model = "data_input.process_component" placeholder="Enter Component Name"> </td>
+							<td class = 'data_entry'>
+								<input v-if = "data_input.custom_data_type == 'In-Process Data'" class = 'data_input'  type = 'number' v-model.number = "data_input.specification" placeholder="Target"></input>
+								<span v-if = "data_input.custom_data_type == 'In-Process Data'" class="plus_minus">&#177</span>
+								<input v-if = "data_input.custom_data_type == 'In-Process Data'" class = 'error_range'  type = 'number' v-model.number = "data_input.error_range" placeholder="Error Range"></input>
+								<select v-if = "data_input.custom_data_type == 'In-Process Data'" class="unit_select" name="" v-model = "data_input.units">
+									<option value="" disabled selected>Select Data Type</option>
+									<option value="L">Liters(L)</option>
+									<option value="mL">Milliliters(mL)</option>
+									<option value="g">Grams(g)</option>
+									<option value="mg">Milligrams(mg)</option>
+									<option value="kg">Killigrams</option>
+									<option value="s">Seconds(s)</option>
+									<option value="min">Minutes(min)</option>
+									<option value="hr">Hours</option>
+								</select>
+								<a class= "NA" v-else>NA</a>
+							</td>
 							<td><button v-on:click = "removeData(data_input.process_component)">Remove</button></td>
 					</tr>
 
 				</table>
+				<br>
 				<button v-on:click = "addData">Add Data</button>
 
 			</div>
@@ -101,15 +139,18 @@
 
 <script>
 import StepService from '../StepServices';
+import selectstepsymbol from './step_symbol_select'
 
 	export default {
 		name: 'test',
 		props: ['step.performed_by','step.verified_by'],
 		components: {
-
+				selectstepsymbol
 		},
 		data(){
 			return {
+				image_source: 'Stop.jpg',
+				change_image:false,
 				error: '',
 				project_code: "",
 				template_selected: false,
@@ -127,16 +168,19 @@ import StepService from '../StepServices';
 
 					step_status: 'pending',
 					step_number:1,
-					step_symbol: 0,
-					step_title: "Enter A Step Title",
+					step_symbol: "'Stop.jpg'",
+					step_title: "",
 					step_instructions: [
-							{instruction: "Add Instructions Here"}
+							{instruction: ""}
 						],
 					step_data: [
 						{
 							custom_data_type: "",
-							process_component: "Process Component",
-							data: "This is data"
+							process_component: "",
+							specification: 0,
+							error_range: 0,
+							units:"",
+							data: ""
 						}
 
 					]
@@ -153,31 +197,35 @@ import StepService from '../StepServices';
 		catch(err){
 			this.error = err.message;
 		}
-
- 		},
-
-		methods: {
+	},
+	methods: {
 			addStep: function(){
 					this.batch_record.steps[this.batch_record.current_step] = this.step,
 					this.batch_record.steps.push(
 					{
 						step_status: 'pending',
 						step_number: this.step.step_number + 1,
-						step_symbol: 0,
-						step_title: "Enter A Step Title",
+						step_symbol: 'Stop.jpg',
+						step_title: "",
 						step_visual_aid: 0,
 						step_instructions: [
-							{instruction: "Add Instructions Here"}
+							{instruction: ""}
 						],
 						step_data: [
-						{
-							custom_data_type: "",
-							process_component: "Process Component",
-							data: "This is data"
-						}
+							{
+								custom_data_type: "",
+								process_component: "",
+								specification:0 ,
+								error_range: 0,
+								units:"",
+								data: ""
+							}
 
-					   ]
-
+						],
+						perfomed_by:"",
+						performed_on:"",
+						verified_by:"",
+						verified_on:""
 					}
 
 					),
@@ -214,9 +262,9 @@ import StepService from '../StepServices';
 			removeData: function(value){
 				for( var i = 0; i < this.step.step_data.length; i++){
   						 if ( this.step.step_data[i].process_component === value) {
-    							 this.step.step_data.splice(i, 1);
-   									}
-					}
+                    this.step.step_data.splice(i, 1);
+             }
+					 }
 
 			},
 			loadTemplate: async function(template_number){
@@ -225,6 +273,7 @@ import StepService from '../StepServices';
 				this.batch_record = record;
 				this.step = this.batch_record.steps[this.batch_record.current_step];
 				this.template_selected = true;
+
 
 			},
 			createLot: function(){
@@ -267,6 +316,21 @@ import StepService from '../StepServices';
 
 
 			},
+			updateIcon: function(e){
+
+						this.step.step_symbol = e;
+            this.select_image();
+                                },
+      getImgUrl(img) {
+            return require('@/assets/Step_Symbols/' + img)
+                      },
+      select_image(){
+            if(this.change_image == true){
+              this.change_image = false
+              }else{
+                    this.change_image = true
+                  }
+                                }
 
 
 		},
@@ -296,8 +360,6 @@ import StepService from '../StepServices';
 	padding:1%;
 	border:2px solid black;
 	background-color: White;
-
-
 }
 
 th {
@@ -312,7 +374,24 @@ table, td,th {
 	border-collapse: collapse;
 
 }
+.br_header {
 
+	width: 25%;
+	margin:auto;
+	padding:1%;
+	border:2px solid black;
+	background-color: White;
+}
+
+.br_header_table{
+
+	width: 100%;
+}
+.br_details{
+	width: 0.166666666666666667;
+
+
+}
 
 /* Operator Navigation */
 
@@ -422,30 +501,6 @@ li textarea{
 	height:auto;
 	vertical-align: middle;
 }
-
-/*
-ol {
-  margin: 0 0 0;
-  padding: 1.5em;
-  counter-reset: item;
-}
-
-ol > li {
-  margin: 0;
-  padding: 0 0 0 ;
-  text-indent: -2em;
-  list-style-type: none;
-  counter-increment: item;
-}
-
-ol > li:before {
-  display: inline-block;
-  width: 1em;
-  padding-right: 0.5em;
-  font-weight: bold;
-  text-align: left;
-  content: counter(item) ".";
-}*/
 /*Data Table*/
 
 .step_data{
@@ -454,7 +509,7 @@ ol > li:before {
 }
 
 .data_table{
-	width: 80%;
+	width: 90%;
 
 
 }
@@ -465,6 +520,7 @@ ol > li:before {
 	background-color: lightgrey;
 	font-weight: bold;
 	padding:0.5%;
+	width:30%;
 
 
 }
@@ -472,13 +528,21 @@ ol > li:before {
 .data_entry{
 	margin: 0px;
 	padding: 5px;
-	background-color:black;
+	background-color:lightgrey;
+	width:30%;
 
 }
+.NA{
+	font-weight: bold;
+
+}
+
 .data_input{
 
-	width: 100%;
+	width: 22%;
 	height: 100%;
+	font-size: 20px;
+	float: left;
 
 }
 .process_component_input{
@@ -489,6 +553,35 @@ ol > li:before {
 	font-size: 20px;
 	text-align: center;
 
+}
+.custom_data_type{
+	background-color:lightgrey;
+	width:30%;
+
+}
+.custom_data_type_select{
+	width: 100%;
+	height: 100%;
+	font-size: 20px;
+}
+
+.unit_select{
+	width: 40%;
+	height: 100%;
+	font-size: 20px;
+	float: left;
+}
+.plus_minus{
+	width: 10%;
+	height: 100%;
+	font-size: 20px;
+	float: left;
+}
+.error_range{
+	width: 18%;
+	height: 100%;
+	font-size: 20px;
+	float: left;
 }
 
 /*Performed By and Verified By */

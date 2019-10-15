@@ -1,24 +1,22 @@
-
 <template>
   <div class="app">
   <div class="sign_in" v-if = "authenticated == false">
     <login @user_authenticated = "user_authenticated()"></login>
   </div>
   <div class="secure" v-else>
+    <a class = "logout" href="#" v-on:click = "LogOut">Log Out</a>
 	<div class = "nav">
 		<button v-on:click = "Home">Home</button>
 		<button v-on:click = "Create">Create A Batch Record</button>
 		<button v-on:click = "Execute">Execute a Batch Record</button>
     <button v-on:click = "Completed">View Completed Batch Records</button>
 	</div>
-	<br>
+	<br>2
 	<div v-if = "home">
 		<h1>Batch Record System Home</h1>
 		<p> This application will be developed to be used as a electronic batch record system
 			for use in manufacturing operations that must comply with FDA regulations.</p>
       <br>
-
-
 	</div>
 	<br>
 	<batch_record v-if = "execute"></batch_record>
@@ -87,6 +85,13 @@ export default {
 			},
       user_authenticated: function(){
         this.authenticated = true;
+      },
+      LogOut: function(){
+        this.authenticated = false;
+      },
+      Reset: function(){
+
+
       }
 
 
@@ -108,5 +113,10 @@ export default {
   padding:1px;
   width: 100%;
   background-color: lightgrey;
+}
+
+.logout{
+  float: right;
+
 }
 </style>
