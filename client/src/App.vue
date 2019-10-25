@@ -1,24 +1,25 @@
 <template>
   <div class="app">
+
   <div class="sign_in" v-if = "authenticated == false">
     <login @user_authenticated = "user_authenticated()"></login>
   </div>
+
   <div class="secure" v-else>
     <a class = "logout" href="#" v-on:click = "LogOut">Log Out</a>
-	<div class = "nav">
-		<button v-on:click = "Home">Home</button>
-		<button v-on:click = "Create">Create A Batch Record</button>
-		<button v-on:click = "Execute">Execute a Batch Record</button>
-    <button v-on:click = "Completed">View Completed Batch Records</button>
+	<a class = "homescreen" href="#" v-on:click = "Home">Home</a><br>
+
+	<div class = "home" v-if = "home">
+		<div class = "menu">
+			<button class="option" v-on:click = "Create">Create A Batch Record Template</button>
+			<br>
+			<button class="option" v-on:click = "Create">Create A Batch Record</button>
+			<br>
+			<button class="option" v-on:click = "Execute">Execute a Batch Record</button>
+			<br>
+			<button class="option" v-on:click = "Completed">View Completed Batch Records</button>
+		</div>
 	</div>
-	<br>2
-	<div v-if = "home">
-		<h1>Batch Record System Home</h1>
-		<p> This application will be developed to be used as a electronic batch record system
-			for use in manufacturing operations that must comply with FDA regulations.</p>
-      <br>
-	</div>
-	<br>
 	<batch_record v-if = "execute"></batch_record>
 	<templateCreation v-if = "create"></templateCreation>
   <completed_brs v-if = "completed"> </completed_brs>
@@ -100,23 +101,51 @@ export default {
 
 </script>
 
-<style>
+<style scoped>
 
 
 .app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  /*margin-top: 60px;*/
-  padding:1px;
-  width: 100%;
-  background-color: lightgrey;
+  width: 100vw;
+  height:100vh;
 }
-
+.secure{
+	height:100%;
+	width:100%;
+	background-color: #BFCED6;
+}
 .logout{
   float: right;
-
 }
+.homescreen{
+	float:left;
+}
+.menu{
+	display:flex;
+	flex-direction: column;
+	padding:10%;
+	justify-content: space-between;
+}
+.option{
+  height:8vh;
+  background-color: #7FADE3;
+  border-radius: 8px;
+  color:#5B6770;
+  font-size:2.0vw;
+  font-weight:bold;
+}
+/*
+{Name: "AJI RED", Value: ColorValue("#EE1C26")},
+{Name: "SLATE GREY", Value: ColorValue("#98A4AE")},
+{Name: "DARK GREY",Value: ColorValue("#5B6770")},
+{Name:"LIGHT GREY",Value: ColorValue("#BFCED6")},
+{Name:"SILVER GREY",Value: ColorValue("#D9E1E2")},
+{Name:"DARK BLUE",Value: ColorValue("#012169")},
+{Name:"SKY BLUE",Value: ColorValue("#7FADE3")},
+{Name:"AQUA",Value: ColorValue("#8BD3E6")},
+{Name:"TEAL",Value: ColorValue("#007396")},
+{Name:"CORAL",Value: ColorValue("#FF8D6D")},
+{Name:"GREEN",Value: ColorValue("#00B388")},
+{Name:"YELLOW",Value: ColorValue("#FFC658")},
+{Name:"PURPLE",Value: ColorValue("#606EB2")});*/
 </style>
